@@ -2,16 +2,19 @@
 
 pragma solidity ^0.8.0;
 
-struct User{
+import "./Listing.sol";
+import "./Car.sol";
+
+contract User{
     string name;
     address addr;
-    Car[] owned_vehicles;
-}
+    Car[] ownedVehicles;
 
-struct Car{
-    User cur_owner;
-    string make;
-    string model;
-    int year;
-    int VIN;
+    function makeBid(Listing l, uint256 bidAmount) public{
+
+    }
+    
+    function sellCar(Car c, uint256 minPrice, uint256 maxPrice) public returns(Listing){
+
+    }
 }
