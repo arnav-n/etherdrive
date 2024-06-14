@@ -60,6 +60,7 @@ contract MarketTest is Test {
         vm.stopPrank();
 
         vm.startPrank(bob);
+        mart.registerUser();
         mart.placeBid{value: 1.5 ether}(0);
         vm.stopPrank();
 
@@ -77,6 +78,7 @@ contract MarketTest is Test {
         vm.stopPrank();
 
         vm.startPrank(bob);
+        mart.registerUser();
         mart.placeBid{value: 1.5 ether}(0);
         vm.stopPrank();
 
@@ -88,5 +90,50 @@ contract MarketTest is Test {
         assertEq(listing.isActive, false);
         assertEq(listing.buyer, bob);
         assertEq(listing.listedCar.owner, bob);
+    }
+
+    function testFailedCloseListing() public {
+        vm.deal(bob, 3 ether);
+        vm.startPrank(alice);
+        mart.registerUser();
+        mart.addOwnedVehicle(0, "Tesla Model S", "5YJSA1E26MF123456");
+        mart.createListing(0, 0, 1 ether, 2 ether);
+        vm.stopPrank();
+
+        vm.startPrank(bob);
+        mart.registerUser();
+        mart.closeListing(0);
+        vm.expectRevert("Only the seller can close the listing");
+        vm.stopPrank();
+    }
+
+    function testFlipCar() public {
+        vm.deal(bob, 3 ether);
+        vm.startPrank(alice);
+        mart.registerUser();
+        mart.addOwnedVehicle(0, "Tesla Model S", "5YJSA1E26MF123456");
+        mart.createListing(0, 0, 1 ether, 4 ether);
+        vm.stopPrank();
+
+        vm.startPrank(bob);
+        uint256 bobId = mart.registerUser();
+        mart.placeBid{value: 3 ether}(0);
+        vm.stopPrank();
+
+        Market.Listing memory listing = mart.getListing(0);
+        assertEq(listing.isActive, true);
+        assertEq(listing.highestBidder, bob);
+
+        vm.startPrank(alice);
+        mart.closeListing(0);
+        vm.stopPrank();
+
+        listing = mart.getListing(0);
+        assertEq(listing.isActive, false);
+        assertEq(listing.buyer, bob);
+
+        Market.Car[] memory bobCars = mart.getUserOwnedVehicles(bobId);
+        assertEq(bobCars.length, 1);
+        assertEq(bobCars[0].vin, "5YJSA1E26MF123456");
     }
 }

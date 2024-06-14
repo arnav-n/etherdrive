@@ -100,6 +100,8 @@ contract Market {
             listing.listedCar.owner = listing.highestBidder;
             payable(listing.seller).transfer(listing.highestBid);
             emit ListingClosed(listing.highestBidder, listing.highestBid);
+            
+            // TODO: need a way to add the car to the buyer's inventory
         }
     }
 
