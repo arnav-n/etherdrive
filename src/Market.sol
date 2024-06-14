@@ -32,13 +32,13 @@ contract Market {
     event NewBid(address indexed bidder, uint256 amount);
     event ListingClosed(address indexed buyer, uint256 amount);
 
-    function registerUser() public returns (uint256){
+    function registerUser() public returns (uint256) {
         User storage newUser = users.push();
         newUser.addr = msg.sender;
-        newUser.userID = users.length-2;
-        
+        newUser.userID = users.length - 1; // Adjusted for zero-indexing
         return newUser.userID;
     }
+
 
     
     function addOwnedVehicle(uint256 userId, string memory _model, string memory _vin) public {

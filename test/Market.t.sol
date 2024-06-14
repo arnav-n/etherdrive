@@ -12,6 +12,7 @@ contract MarketTest is Test {
     address alice = address(0x99);
 
     function setUp() public {
+        mart = new Market();
         // deal(alice, 100 ether);
     }
 
@@ -19,7 +20,6 @@ contract MarketTest is Test {
         vm.startPrank(alice);
         mart.registerUser();
         vm.stopPrank();
-
-       assertEq(mart.getUsers().length==1, true);
+        assertEq(mart.getUsers().length, 1);
     }
 }
