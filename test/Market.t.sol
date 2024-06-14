@@ -9,6 +9,7 @@ contract MarketTest is Test {
     Market public mart;
     address alice = address(0x99);
     address bob = address(0x100);
+    address charlie = address(0x101);
 
     function setUp() public {
         mart = new Market();
@@ -60,13 +61,28 @@ contract MarketTest is Test {
         vm.stopPrank();
 
         vm.startPrank(bob);
-        mart.registerUser();
-        mart.placeBid{value: 1.5 ether}(0);
+        uint256 bobID = mart.registerUser();
+        mart.placeBid{value: 1.5 ether}(0, bobID);
         vm.stopPrank();
 
         Market.Listing memory listing = mart.getListing(0);
         assertEq(listing.highestBid, 1.5 ether);
         assertEq(listing.highestBidder, bob);
+    }
+
+    function testFailedBid() public {
+        vm.deal(bob, 3 ether);
+        vm.startPrank(alice);
+        mart.registerUser();
+        mart.addOwnedVehicle(0, "Tesla Model S", "5YJSA1E26MF123456");
+        mart.createListing(0, 0, 4 ether, 6 ether);
+        vm.stopPrank();
+
+        vm.startPrank(bob);
+        uint256 bobID = mart.registerUser();
+        mart.placeBid{value: 3 ether}(0, bobID);
+        vm.expectRevert("Bid amount is less than minimum price");
+        vm.stopPrank();
     }
 
     function testCloseListing() public {
@@ -78,8 +94,8 @@ contract MarketTest is Test {
         vm.stopPrank();
 
         vm.startPrank(bob);
-        mart.registerUser();
-        mart.placeBid{value: 1.5 ether}(0);
+        uint256 bobID = mart.registerUser();
+        mart.placeBid{value: 1.5 ether}(0, bobID);
         vm.stopPrank();
 
         vm.startPrank(alice);
@@ -116,8 +132,8 @@ contract MarketTest is Test {
         vm.stopPrank();
 
         vm.startPrank(bob);
-        uint256 bobId = mart.registerUser();
-        mart.placeBid{value: 3 ether}(0);
+        uint256 bobID = mart.registerUser();
+        mart.placeBid{value: 3 ether}(0, bobID);
         vm.stopPrank();
 
         Market.Listing memory listing = mart.getListing(0);
@@ -132,8 +148,66 @@ contract MarketTest is Test {
         assertEq(listing.isActive, false);
         assertEq(listing.buyer, bob);
 
-        Market.Car[] memory bobCars = mart.getUserOwnedVehicles(bobId);
+        Market.Car[] memory bobCars = mart.getUserOwnedVehicles(bobID);
         assertEq(bobCars.length, 1);
         assertEq(bobCars[0].vin, "5YJSA1E26MF123456");
+    }
+
+    function testCompetingBids() public {
+        vm.deal(bob, 3 ether);
+        vm.deal(charlie, 5 ether);
+
+        vm.startPrank(alice);
+        mart.registerUser();
+        mart.addOwnedVehicle(0, "Tesla Model S", "5YJSA1E26MF123456");
+        mart.createListing(0, 0, 2 ether, 6 ether);
+        vm.stopPrank();
+
+        vm.startPrank(bob);
+        uint256 bobID = mart.registerUser();
+        mart.placeBid{value: 3 ether}(0, bobID);
+        vm.stopPrank();
+
+        vm.startPrank(charlie);
+        uint256 charlieID = mart.registerUser();
+        mart.placeBid{value: 5 ether}(0, charlieID);
+        vm.stopPrank();
+
+        vm.startPrank(alice);
+        mart.closeListing(0);
+        vm.stopPrank();
+        
+        // assert that charlie received the car
+        Market.Car[] memory charlieCars = mart.getUserOwnedVehicles(charlieID);
+        assertEq(charlieCars.length, 1);
+        assertEq(charlieCars[0].vin, "5YJSA1E26MF123456");
+    }
+
+    function testRefunds() public {
+        vm.deal(bob, 3 ether);
+        vm.deal(charlie, 5 ether);
+
+        vm.startPrank(alice);
+        mart.registerUser();
+        mart.addOwnedVehicle(0, "Tesla Model S", "5YJSA1E26MF123456");
+        mart.createListing(0, 0, 2 ether, 6 ether);
+        vm.stopPrank();
+
+        vm.startPrank(bob);
+        uint256 bobID = mart.registerUser();
+        mart.placeBid{value: 3 ether}(0, bobID);
+        vm.stopPrank();
+
+        vm.startPrank(charlie);
+        uint256 charlieID = mart.registerUser();
+        mart.placeBid{value: 5 ether}(0, charlieID);
+        vm.stopPrank();
+
+        vm.startPrank(alice);
+        mart.closeListing(0);
+        vm.stopPrank();
+        
+        // assert that bob was refunded
+        assertEq(bob.balance, 3 ether);
     }
 }

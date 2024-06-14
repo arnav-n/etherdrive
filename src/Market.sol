@@ -20,10 +20,12 @@ contract Market {
         address seller;
         uint256 minPrice;
         uint256 maxPrice;
+
         address buyer;
         bool isActive;
         uint256 highestBid;
         address highestBidder;
+        uint256 buyerID;
     }
 
     User[] public users;
@@ -38,10 +40,15 @@ contract Market {
         newUser.userID = users.length - 1; // Adjusted for zero-indexing
         return newUser.userID;
     }
+
+    function addExistingVehicle(uint256 userId, Car memory c) public {
+        User storage user = users[userId];
+        user.ownedVehicles.push(c);
+    }
     
     function addOwnedVehicle(uint256 userId, string memory _model, string memory _vin) public {
         User storage user = users[userId];
-        require(user.addr == msg.sender, "Only the user can add a vehicle");
+        require(user.addr == msg.sender, "Only the user can register a vehicle");
 
         Car memory newCar = Car(_model, _vin, msg.sender);
         user.ownedVehicles.push(newCar);
@@ -65,13 +72,14 @@ contract Market {
             buyer: address(0),
             isActive: true,
             highestBid: 0,
-            highestBidder: address(0)
+            highestBidder: address(0),
+            buyerID: 0
         });
 
         listings.push(newListing);
     }
 
-    function placeBid(uint256 listingId) public payable {
+    function placeBid(uint256 listingId, uint256 buyerId) public payable {
         Listing storage listing = listings[listingId];
         require(listing.isActive, "Listing is not active");
         require(msg.value >= listing.minPrice, "Bid amount is less than minimum price");
@@ -84,6 +92,7 @@ contract Market {
 
         listing.highestBid = msg.value;
         listing.highestBidder = msg.sender;
+        listing.buyerID = buyerId;
 
         emit NewBid(msg.sender, msg.value);
     }
@@ -100,8 +109,7 @@ contract Market {
             listing.listedCar.owner = listing.highestBidder;
             payable(listing.seller).transfer(listing.highestBid);
             emit ListingClosed(listing.highestBidder, listing.highestBid);
-            
-            // TODO: need a way to add the car to the buyer's inventory
+            addExistingVehicle(listing.buyerID, listing.listedCar);
         }
     }
 
