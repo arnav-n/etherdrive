@@ -38,8 +38,6 @@ contract Market {
         newUser.userID = users.length - 1; // Adjusted for zero-indexing
         return newUser.userID;
     }
-
-
     
     function addOwnedVehicle(uint256 userId, string memory _model, string memory _vin) public {
         User storage user = users[userId];
@@ -81,7 +79,6 @@ contract Market {
 
         // Refund the previous highest bidder
         if (listing.highestBidder != address(0)) {
-            //reentrancy?
             payable(listing.highestBidder).transfer(listing.highestBid);
         }
 
@@ -112,5 +109,14 @@ contract Market {
 
     function getUsers() public view returns(User[] memory){
         return users;
+    }
+
+    function getListingsCount() public view returns (uint256) {
+        return listings.length;
+    }
+
+    function getListing(uint256 index) public view returns (Listing memory) {
+        require(index < listings.length, "Index out of bounds");
+        return listings[index];
     }
 }
