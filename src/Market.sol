@@ -30,10 +30,7 @@ contract Market {
 
     User[] public users;
     Listing[] public listings;
-
-    event NewBid(address indexed bidder, uint256 amount);
-    event ListingClosed(address indexed buyer, uint256 amount);
-
+    
     function registerUser() public returns (uint256) {
         User storage newUser = users.push();
         newUser.addr = msg.sender;
@@ -93,8 +90,6 @@ contract Market {
         listing.highestBid = msg.value;
         listing.highestBidder = msg.sender;
         listing.buyerID = buyerId;
-
-        emit NewBid(msg.sender, msg.value);
     }
 
     function closeListing(uint256 listingId) public {
@@ -108,7 +103,6 @@ contract Market {
             listing.buyer = listing.highestBidder;
             listing.listedCar.owner = listing.highestBidder;
             payable(listing.seller).transfer(listing.highestBid);
-            emit ListingClosed(listing.highestBidder, listing.highestBid);
             addExistingVehicle(listing.buyerID, listing.listedCar);
         }
     }
