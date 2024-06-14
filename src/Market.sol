@@ -10,9 +10,9 @@ contract Market {
     }
 
     struct User {
-        string name;
         address addr;
         Car[] ownedVehicles;
+        uint256 userID;
     }
 
     struct Listing {
@@ -32,12 +32,15 @@ contract Market {
     event NewBid(address indexed bidder, uint256 amount);
     event ListingClosed(address indexed buyer, uint256 amount);
 
-    function registerUser(string memory _name) public {
+    function registerUser() public returns (uint256){
         User storage newUser = users.push();
-        newUser.name = _name;
         newUser.addr = msg.sender;
+        newUser.userID = users.length-2;
+        
+        return newUser.userID;
     }
 
+    
     function addOwnedVehicle(uint256 userId, string memory _model, string memory _vin) public {
         User storage user = users[userId];
         require(user.addr == msg.sender, "Only the user can add a vehicle");
@@ -78,6 +81,7 @@ contract Market {
 
         // Refund the previous highest bidder
         if (listing.highestBidder != address(0)) {
+            //reentrancy?
             payable(listing.highestBidder).transfer(listing.highestBid);
         }
 
@@ -104,5 +108,9 @@ contract Market {
 
     function getUserOwnedVehicles(uint256 userId) public view returns (Car[] memory) {
         return users[userId].ownedVehicles;
+    }
+
+    function getUsers() public view returns(User[] memory){
+        return users;
     }
 }
