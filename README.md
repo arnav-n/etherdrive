@@ -14,7 +14,7 @@ A user can register in the system by calling registerUser(), and can then perfor
 
 **Return Type**: `uint256`
 
-**Description**: Registers the current user in the Market, returning their User ID number. 
+**Description**: Registers the current user in the Market, returning their User ID number. <br />
 
 - `createListing(uint256 userId, uint256 carIndex, uint256 _minPrice, uint256 _maxPrice)`
 
@@ -22,7 +22,7 @@ A user can register in the system by calling registerUser(), and can then perfor
 
 **Return Type**: None
 
-**Description**: Creates a for-sale listing for the given car, with the specified price range. 
+**Description**: Creates a for-sale listing for the given car, with the specified price range. <br />
 
 - `placeBid(uint256 listingId, uint256 buyerId)`
 
@@ -32,7 +32,7 @@ A user can register in the system by calling registerUser(), and can then perfor
 
 **Description**: Call by using `market.placeBid{value: X ether}(listingID, userID);`
 
-**Special Notes**: payable function, care is necessary to prevent reentrancy exploits
+**Special Notes**: payable function, care is necessary to prevent reentrancy exploits<br />
 
 
 - `closeListing(uint256 listingId)`
@@ -43,7 +43,7 @@ A user can register in the system by calling registerUser(), and can then perfor
 
 **Description**: The user can call this function to close a listing they have posted, signifying that the sale period has ended. The car will then be sold to the highest bidder at this time. 
 
-**Special Notes**: payable function, care is necessary to prevent reentrancy exploits
+**Special Notes**: payable function, care is necessary to prevent reentrancy exploits<br />
 
 
 - `addExistingVehicle(uint256 userId, Car memory c)`
@@ -54,39 +54,43 @@ A user can register in the system by calling registerUser(), and can then perfor
 
 **Return Type**: None
 
-**Description**: These functions allow you to add a car to your inventory, but differ in their parameters. 
+**Description**: These functions allow you to add a car to your inventory, but differ in their parameters. <br />
 
 
 - `getUserOwnedVehicles(uint256 userId)`
+
 **Parameters**: User ID to fetch owned vehicles
 
 **Return Type**: `Car[]`
 
-**Description**: Simple getter function to fetch a user's owned vehicles
+**Description**: Simple getter function to fetch a user's owned vehicles<br />
 
 
 - `getUsers()`
+
 **Parameters**: None
 
 **Return Type**: `User []`
 
-**Description**: Getter function to fetch all users
+**Description**: Getter function to fetch all users<br />
 
 
 - `getListingsCount()`
+
 **Parameters**: None
 
 **Return Type**: `uint256`
 
-**Description**: Getter function to fetch length of global listings array
+**Description**: Getter function to fetch length of global listings array <br />
 
 
 - `getListing(uint256 index)`
+
 **Parameters**: Index of the listing in the global listing array
 
 **Return Type**: `Listing`
 
-**Description**: Getter function to fetch a single given listing
+**Description**: Getter function to fetch a single given listing <br />
 
 
 - `getAllListings()`
