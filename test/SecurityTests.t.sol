@@ -30,12 +30,11 @@ contract MarketTest is Test {
         vm.startPrank(bob);
         uint256 bobId = mart.registerUser();
         // Place initial bid
-        (bool success1, ) = address(mart).call{value: 1.1 ether}(abi.encodeWithSignature("placeBid(uint256, uint256)", 0, bobId));
-        require(success1, "Initial bid failed");
+        mart.placeBid{value: 1.1 ether}(0, bobId);
 
         // Try to reenter the placeBid function
-        (bool success2, ) = address(mart).call{value: 1.2 ether}(abi.encodeWithSignature("placeBid(uint256, uint256)", 0, bobId));
-        require(!success2, "Reentrancy attack should be prevented");
+        (bool success, ) = address(mart).call{value: 1.2 ether}(abi.encodeWithSignature("placeBid(uint256, uint256)", 0, bobId));
+        require(!success, "Reentrancy attack should be prevented");
         vm.stopPrank();
     }
 
@@ -55,14 +54,13 @@ contract MarketTest is Test {
         vm.startPrank(bob);
         uint256 bobId = mart.registerUser();
         // Place bid
-        (bool success1, ) = address(mart).call{value: 1.5 ether}(abi.encodeWithSignature("placeBid(uint256, uint256)", 0, bobId));
-        require(success1, "Bid failed");
+        mart.placeBid{value: 1.5 ether}(0, bobId);
         vm.stopPrank();
 
         vm.startPrank(alice);
         // Close listing (reentrancy)
-        (bool success2, ) = address(mart).call(abi.encodeWithSignature("closeListing(uint256, uint256)", 0, aliceId));
-        require(success2, "Listing should be closed without reentrancy attack");
+        (bool success, ) = address(mart).call(abi.encodeWithSignature("closeListing(uint256)", 0));
+        require(success, "Listing should be closed without reentrancy attack");
         vm.stopPrank();
     }
 
@@ -133,11 +131,10 @@ contract MarketTest is Test {
         vm.startPrank(bob);
         uint256 bobId = mart.registerUser();
         // Place initial bid
-        (bool success1, ) = address(mart).call{value: 1.1 ether}(abi.encodeWithSignature("placeBid(uint256, uint256)", 0, bobId));
-        require(success1, "Initial bid failed");
+        mart.placeBid{value: 1.1 ether}(0, bobId);
 
-        (bool success2, ) = address(mart).call{value: 1 ether}(abi.encodeWithSignature("placeBid(uint256, uint256)", 0, bobId));
-        require(!success2, "Bid should be higher than the current highest bid");
+        (bool success, ) = address(mart).call{value: 1 ether}(abi.encodeWithSignature("placeBid(uint256, uint256)", 0, bobId));
+        require(!success, "Bid should be higher than the current highest bid");
         vm.stopPrank();
     }
 
