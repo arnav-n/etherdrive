@@ -30,7 +30,7 @@ contract Market {
 
     User[] public users;
     Listing[] public listings;
-    
+
     function registerUser() public returns (uint256) {
         User storage newUser = users.push();
         newUser.addr = msg.sender;
@@ -122,5 +122,9 @@ contract Market {
     function getListing(uint256 index) public view returns (Listing memory) {
         require(index < listings.length, "Index out of bounds");
         return listings[index];
+    }
+
+    function getAllListings() public view returns (Listing[] memory) {
+        return listings;
     }
 }

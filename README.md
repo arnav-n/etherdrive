@@ -1,66 +1,31 @@
-## Foundry
+## EtherDrive
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
-
-Foundry consists of:
-
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
-
-## Documentation
-
-https://book.getfoundry.sh/
+**An on-chain car marketplace**
 
 ## Usage
+To run tests, run `forge test`. 
 
-### Build
+A user can register in the system by calling registerUser(), and can then perform actions to manage their inventory, view all listed cars, create a listing of their own, or place a bid for a listing. After registering, the user will be assigned a User ID which they can use to place bids or create listings. All functionality happens within the Market.sol smart contract. 
 
-```shell
-$ forge build
-```
+## Documentation
+'registerUser()'
+**Parameters**: None
+**Return Type**: uint256
+**Description**: Registers the current user in the Market, returning their User ID number. 
 
-### Test
+'createListing(uint256 userId, uint256 carIndex, uint256 _minPrice, uint256 _maxPrice)'
+**Parameters**: current user's ID number, index of the car they want to sell in their ownedVehicles array, and a price range
+**Return Type**: None
+**Description**: Creates a for-sale listing for the given car, with the specified price range. 
 
-```shell
-$ forge test
-```
+'placeBid(uint256 listingId, uint256 buyerId)'
+**Parameters**: listing ID for which to place a bid, and current user's user ID
+**Return Type**: None
+**Description**: Call by using 'market.placeBid{value: X ether}(listingID, userID);'
+**Special Notes**: payable function, care is necessary to prevent reentrancy exploits
 
-### Format
 
-```shell
-$ forge fmt
-```
 
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+**Parameters**: 
+**Return Type**: 
+**Description**:
