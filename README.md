@@ -7,6 +7,9 @@ To run tests, run `forge test`.
 
 A user can register in the system by calling registerUser(), and can then perform actions to manage their inventory, view all listed cars, create a listing of their own, or place a bid for a listing. After registering, the user will be assigned a User ID which they can use to place bids or create listings. All functionality happens within the Market.sol smart contract. 
 
+## Components
+The main Market smart contract organizes all the data and functionality of this marketplace. Users, Cars, and Listings are all stored as structs, and users of the application can create and interact with Listing instances to facilitate the purchasing of Car instances. Users do not have to sign up as a specific buyer or seller, and can easily create a listing to sell their car or bid on a listing to try and purchase a car. 
+
 ## Documentation
 - `registerUser()`
 
