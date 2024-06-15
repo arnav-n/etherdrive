@@ -252,6 +252,7 @@ contract MarketTest is Test {
         assertEq(charlieCars[0].vin, "5YJSA1E26MF123456");
     }
     //Test 10
+    //The previous highest bidder should be refunded if outbid
     function testRefunds() public {
         // Set up Bob's and Charlie's initial ETH balances
         vm.deal(bob, 3 ether);
