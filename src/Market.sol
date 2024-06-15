@@ -24,6 +24,7 @@ contract Market {
         bool isActive;
         uint256 highestBid;
         address highestBidder;
+        uint256 buyerID;
     }
 
     User[] public users;
@@ -36,9 +37,6 @@ contract Market {
         _;
         locked = false;
     }
-
-    event NewBid(address indexed bidder, uint256 amount);
-    event ListingClosed(address indexed buyer, uint256 amount);
 
     function registerUser() public returns (uint256) {
         User storage newUser = users.push();
@@ -53,6 +51,11 @@ contract Market {
 
         Car memory newCar = Car(_model, _vin, msg.sender);
         user.ownedVehicles.push(newCar);
+    }
+
+    function addExistingVehicle(uint256 userId, Car memory c) public {
+        User storage user = users[userId];
+        user.ownedVehicles.push(c);
     }
 
     function createListing(uint256 userId, uint256 carIndex, uint256 _minPrice, uint256 _maxPrice) public {
@@ -73,13 +76,14 @@ contract Market {
             buyer: address(0),
             isActive: true,
             highestBid: 0,
-            highestBidder: address(0)
+            highestBidder: address(0),
+            buyerID: 0
         });
 
         listings.push(newListing);
     }
 
-    function placeBid(uint256 listingId) public payable noReentrancy {
+    function placeBid(uint256 listingId, uint256 buyerId) public payable noReentrancy {
         Listing storage listing = listings[listingId];
         require(listing.isActive, "Listing is not active");
         require(msg.value >= listing.minPrice, "Bid amount is less than minimum price");
@@ -92,14 +96,13 @@ contract Market {
 
         listing.highestBid = msg.value;
         listing.highestBidder = msg.sender;
+        listing.buyerID = buyerId;
 
         // Interactions
         if (previousHighestBidder != address(0)) {
             (bool success, ) = previousHighestBidder.call{value: previousHighestBid}("");
             require(success, "Refund failed");
         }
-
-        emit NewBid(msg.sender, msg.value);
     }
 
     function closeListing(uint256 listingId) public noReentrancy {
@@ -116,15 +119,14 @@ contract Market {
             uint256 highestBid = listing.highestBid;
             address seller = listing.seller;
 
+            addExistingVehicle(listing.buyerID, listing.listedCar);
+
             listing.highestBid = 0;
             listing.highestBidder = address(0);
 
             // Interactions
             (bool success, ) = seller.call{value: highestBid}("");
             require(success, "Payment to seller failed");
-            emit ListingClosed(listing.highestBidder, highestBid);
-            
-            // TODO: need a way to add the car to the buyer's inventory
         }
     }
 
@@ -143,5 +145,9 @@ contract Market {
     function getListing(uint256 index) public view returns (Listing memory) {
         require(index < listings.length, "Index out of bounds");
         return listings[index];
+    }
+
+    function getAllListings() public view returns (Listing[] memory) {
+        return listings;
     }
 }

@@ -19,21 +19,22 @@ contract MarketTest is Test {
     // One of 2 functions that have reentrancy risk, we used a reentrancy lock to prevent this
     function testReentrancyOnPlaceBid() public {
         vm.startPrank(alice);
-        uint256 userId = mart.registerUser();
-        mart.addOwnedVehicle(userId, "Model X", "VIN123");
+        uint256 aliceId = mart.registerUser();
+        mart.addOwnedVehicle(aliceId, "Model X", "VIN123");
 
         // Create listing
-        mart.createListing(userId, 0, 1 ether, 2 ether);
+        mart.createListing(aliceId, 0, 1 ether, 2 ether);
         vm.stopPrank();
 
         vm.deal(bob, 2 ether);
         vm.startPrank(bob);
+        uint256 bobId = mart.registerUser();
         // Place initial bid
-        (bool success1, ) = address(mart).call{value: 1.1 ether}(abi.encodeWithSignature("placeBid(uint256)", 0));
+        (bool success1, ) = address(mart).call{value: 1.1 ether}(abi.encodeWithSignature("placeBid(uint256, uint256)", 0, bobId));
         require(success1, "Initial bid failed");
 
         // Try to reenter the placeBid function
-        (bool success2, ) = address(mart).call{value: 1.2 ether}(abi.encodeWithSignature("placeBid(uint256)", 0));
+        (bool success2, ) = address(mart).call{value: 1.2 ether}(abi.encodeWithSignature("placeBid(uint256, uint256)", 0, bobId));
         require(!success2, "Reentrancy attack should be prevented");
         vm.stopPrank();
     }
@@ -43,23 +44,24 @@ contract MarketTest is Test {
     // Again we used a reentrancy lock in this function to prevent reentrancy
     function testReentrancyOnCloseListing() public {
         vm.startPrank(alice);
-        uint256 userId = mart.registerUser();
-        mart.addOwnedVehicle(userId, "Model S", "VIN456");
+        uint256 aliceId = mart.registerUser();
+        mart.addOwnedVehicle(aliceId, "Model S", "VIN456");
 
         // Create listing
-        mart.createListing(userId, 0, 1 ether, 2 ether);
+        mart.createListing(aliceId, 0, 1 ether, 2 ether);
         vm.stopPrank();
 
         vm.deal(bob, 2 ether);
         vm.startPrank(bob);
+        uint256 bobId = mart.registerUser();
         // Place bid
-        (bool success1, ) = address(mart).call{value: 1.5 ether}(abi.encodeWithSignature("placeBid(uint256)", 0));
+        (bool success1, ) = address(mart).call{value: 1.5 ether}(abi.encodeWithSignature("placeBid(uint256, uint256)", 0, bobId));
         require(success1, "Bid failed");
         vm.stopPrank();
 
         vm.startPrank(alice);
         // Close listing (reentrancy)
-        (bool success2, ) = address(mart).call(abi.encodeWithSignature("closeListing(uint256)", 0));
+        (bool success2, ) = address(mart).call(abi.encodeWithSignature("closeListing(uint256, uint256)", 0, aliceId));
         require(success2, "Listing should be closed without reentrancy attack");
         vm.stopPrank();
     }
@@ -69,12 +71,12 @@ contract MarketTest is Test {
     // Otherwise people can take the ETH after selling a vehicle that is not owned by them
     function testAddVehicleOnlyByOwner() public {
         vm.startPrank(alice);
-        uint256 userId = mart.registerUser();
+        uint256 aliceId = mart.registerUser();
         vm.stopPrank();
 
         vm.startPrank(bob);
         // Bob tries to add Alice's vehicle, and we save the result in a bool
-        (bool success, ) = address(mart).call(abi.encodeWithSignature("addOwnedVehicle(uint256,string,string)", userId, "Model 3", "VIN789"));
+        (bool success, ) = address(mart).call(abi.encodeWithSignature("addOwnedVehicle(uint256,string,string)", aliceId, "Model 3", "VIN789"));
         require(!success, "Only the owner should be able to add a vehicle");
         vm.stopPrank();
     }
@@ -84,13 +86,13 @@ contract MarketTest is Test {
     // Otherwise people can take the ETH after selling a vehicle that is not owned by them
     function testCreateListingOnlyByOwner() public {
         vm.startPrank(alice);
-        uint256 userId = mart.registerUser();
-        mart.addOwnedVehicle(userId, "Model Y", "VIN101");
+        uint256 aliceId = mart.registerUser();
+        mart.addOwnedVehicle(aliceId, "Model Y", "VIN101");
         vm.stopPrank();
 
         vm.startPrank(bob);
         // Bob tries to create a listing with Alice's vehicle
-        (bool success, ) = address(mart).call(abi.encodeWithSignature("createListing(uint256,uint256,uint256,uint256)", userId, 0, 1 ether, 2 ether));
+        (bool success, ) = address(mart).call(abi.encodeWithSignature("createListing(uint256,uint256,uint256,uint256)", aliceId, 0, 1 ether, 2 ether));
         require(!success, "Only the owner should be able to create a listing");
         vm.stopPrank();
     }
@@ -100,16 +102,17 @@ contract MarketTest is Test {
     // This could cause people to place a bid under min price and potentially they can win the auction
     function testPlaceBidBelowMinPrice() public {
         vm.startPrank(alice);
-        uint256 userId = mart.registerUser();
-        mart.addOwnedVehicle(userId, "Model X", "VIN123");
+        uint256 aliceId = mart.registerUser();
+        mart.addOwnedVehicle(aliceId, "Model X", "VIN123");
 
         // Create listing
-        mart.createListing(userId, 0, 1 ether, 2 ether);
+        mart.createListing(aliceId, 0, 1 ether, 2 ether);
         vm.stopPrank();
 
         vm.deal(bob, 1 ether);
         vm.startPrank(bob);
-        (bool success, ) = address(mart).call{value: 0.5 ether}(abi.encodeWithSignature("placeBid(uint256)", 0));
+        uint256 bobId = mart.registerUser();
+        (bool success, ) = address(mart).call{value: 0.5 ether}(abi.encodeWithSignature("placeBid(uint256, uint256)", 0, bobId));
         require(!success, "Bid amount should be above the minimum price");
         vm.stopPrank();
     }
@@ -119,20 +122,21 @@ contract MarketTest is Test {
     // Otherwise a malicious user could potentially make a minimum price bid right before the bid window expires and potentially win the auction
     function testPlaceBidHigherThanCurrent() public {
         vm.startPrank(alice);
-        uint256 userId = mart.registerUser();
-        mart.addOwnedVehicle(userId, "Model X", "VIN123");
+        uint256 aliceId = mart.registerUser();
+        mart.addOwnedVehicle(aliceId, "Model X", "VIN123");
 
         // Create listing
-        mart.createListing(userId, 0, 1 ether, 2 ether);
+        mart.createListing(aliceId, 0, 1 ether, 2 ether);
         vm.stopPrank();
 
         vm.deal(bob, 2 ether);
         vm.startPrank(bob);
+        uint256 bobId = mart.registerUser();
         // Place initial bid
-        (bool success1, ) = address(mart).call{value: 1.1 ether}(abi.encodeWithSignature("placeBid(uint256)", 0));
+        (bool success1, ) = address(mart).call{value: 1.1 ether}(abi.encodeWithSignature("placeBid(uint256, uint256)", 0, bobId));
         require(success1, "Initial bid failed");
 
-        (bool success2, ) = address(mart).call{value: 1 ether}(abi.encodeWithSignature("placeBid(uint256)", 0));
+        (bool success2, ) = address(mart).call{value: 1 ether}(abi.encodeWithSignature("placeBid(uint256, uint256)", 0, bobId));
         require(!success2, "Bid should be higher than the current highest bid");
         vm.stopPrank();
     }
@@ -142,11 +146,11 @@ contract MarketTest is Test {
     // If we allow a buyer to be able to close the listing, they can potentially place a minimum price bid as soon as a listing is created, close it, and get the car for a minimum price
     function testCloseListingOnlyBySeller() public {
         vm.startPrank(alice);
-        uint256 userId = mart.registerUser();
-        mart.addOwnedVehicle(userId, "Model X", "VIN123");
+        uint256 aliceId = mart.registerUser();
+        mart.addOwnedVehicle(aliceId, "Model X", "VIN123");
 
         // Create listing
-        mart.createListing(userId, 0, 1 ether, 2 ether);
+        mart.createListing(aliceId, 0, 1 ether, 2 ether);
         vm.stopPrank();
 
         vm.startPrank(bob);
@@ -160,12 +164,12 @@ contract MarketTest is Test {
     // This can potentially leak information about vehicles, such as title/registration/etc., to users who are not the owner of a vehicle
     function testPreventUnauthorizedAccessToUserVehicles() public {
         vm.startPrank(alice);
-        uint256 userId = mart.registerUser();
-        mart.addOwnedVehicle(userId, "Model X", "VIN123");
+        uint256 aliceId = mart.registerUser();
+        mart.addOwnedVehicle(aliceId, "Model X", "VIN123");
         vm.stopPrank();
 
         vm.startPrank(bob);
-        (bool success, ) = address(mart).call(abi.encodeWithSignature("getUserOwnedVehicles(uint256)", userId + 1));
+        (bool success, ) = address(mart).call(abi.encodeWithSignature("getUserOwnedVehicles(uint256)", aliceId + 1));
         require(!success, "Unauthorized access to user vehicles should be prevented");
         vm.stopPrank();
     }
